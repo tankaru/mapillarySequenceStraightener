@@ -180,7 +180,7 @@ function saveToken(){
 	const matched = url.match(/access_token=([^&]*)/);
 	if (matched) {
         token = matched[1];
-        localStorage.setItem(token);
+        localStorage.setItem('token', token);
 
 		return true;
 	}
