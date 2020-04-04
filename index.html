@@ -49,7 +49,7 @@
 
     <div id='mapcontainer'></div>
     <ol>
-        <li><input type="button" class="" id="" value="Open Authorize page" onclick="authorize()"><input type="button" class="" id="" value="Save authorization" onclick="saveToken()">
+        <li><input type="button" class="" id="" value="Open Authorize page" onclick="authorize()"><input type="button" class="" id="" value="Save authorization" onclick="saveToken()"><span id="authorized"></span>
         <li>Mapillary sequence ID: <input type="text" class="" id="sequence_id" value="_sm2ugaDA8DGoBQVCOh07g"><input type="button" class="" id="" value="Load" onclick="loadSequence()">
         <li>Edit. Right click to set "corner" image.
         <li><input type="button" class="" id="" value="Straighten" onclick="straighten()">
@@ -115,6 +115,16 @@ function authorize(){
 	const url = 'https://www.mapillary.com/connect?client_id=' + client_id + '&response_type=token&scope=public:write&redirect_uri=' + redirect_uri;
 	location.href = url;
 }
+
+    function checkAuthorization() {
+        const token = loadToken();
+        if (token) {
+            document.getElementById("authorized").innerText = "(Authorized)";
+        } else {
+            document.getElementById("authorized").innerText = "(Not Authorized)";
+        }
+
+    }
 
 //mapillary変更セットを作成
 function getChangeset(){
@@ -420,6 +430,8 @@ function initMap() {
 	var layerControl = L.control.layers(baseMap,overlayLayer,{"collapsed":true,});
 	layerControl.addTo(map);
 
+    //認証チェック
+    checkAuthorization();
 }
 
 </script>
