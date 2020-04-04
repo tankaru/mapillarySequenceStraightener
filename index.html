@@ -150,7 +150,7 @@ function getChangeset(){
 
 function submitChangeset(){
 	const changeset = getChangeset();
-	const url = 'https://a.mapillary.com/v3/changesets?_dry_run&client_id=' + client_id;
+	const url = 'https://a.mapillary.com/v3/changesets?client_id=' + client_id;
 	
 	//https://qiita.com/keniooi/items/458732fc8f29cc8e445a
 	let xhr = new XMLHttpRequest();
