@@ -51,9 +51,10 @@
 
 	Mapillary sequence ID: <input type="text" class="" id="sequence_id" value="_sm2ugaDA8DGoBQVCOh07g">
 	<input type="button" class="" id="" value="Load" onclick="loadSequence()">
-	</br>
+	<br/>
 	<input type="button" class="" id="" value="Straighten" onclick="straighten()">
-	<input type="button" class="" id="" value="Authorize" onclick="authorize()">
+	<input type="button" class="" id="" value="Open Authorize page" onclick="authorize()">
+	<input type="button" class="" id="" value="Save authorization" onclick="saveToken()">
 	<input type="button" class="" id="" value="Submit" onclick="submitChangeset()">
 
 </div>
@@ -110,20 +111,68 @@ const modified_options = {
 	backgroundColor: 'blue',
 };
 
-
+//認証ページを開く
+//URLを直接開くようなやり方は良くない気がする。
 function authorize(){
 	const url = 'https://www.mapillary.com/connect?client_id=' + client_id + '&response_type=token&scope=public:write&redirect_uri=' + redirect_uri;
-
-	let request = new XMLHttpRequest();
-	request.open('GET', url, true);
-	request.onload = function () {
-		const data = this.response;
-		console.log(location.href, JSON.stringify(data));
-		
-	}
-	request.send();
+	location.href = url;
 }
 
+//mapillary変更セットを作成
+function getChangeset(){
+
+	let changes = [];
+	//
+	for (let i=0;i<images.length;i++){
+		if (image[i].modified){
+			let latlng = images.getLayer(image[i].layer).getLatLng();
+			let geometry = {
+				coordinates: [latlng.lng, latlng.lat],
+				type: "Point"
+			};
+			let changeto = {
+				geometry: geometry,
+				properties: {},
+				type: "Feature"
+			};
+			let change = {
+				image_key: image_key,
+				to: changeto
+			};
+			changes.append(change);			
+		}
+
+	}
+	const changeset = {
+		type: "location",
+		changes: changes
+	}
+    return changeset;
+}
+
+function submitChangeset(){
+	const changeset = getChangeset();
+	const url = 'https://a.mapillary.com/v3/changesets?_dry_run&client_id=' + client_id;
+	
+	//https://qiita.com/keniooi/items/458732fc8f29cc8e445a
+	let xhr = new XMLHttpRequest();
+	xhr.open("POST", url);
+	xhr.setRequestHeader("Content-Type", "application/json");
+	const authorization = 'Bearer ' + loadToken;
+	xhr.setRequestHeader("Authorization", authorization);
+	xhr.onload = () => {
+		console.log(xhr.status, xhr.statusText);
+		console.log("success!");
+		console.log(xhr.responseText);
+	};
+	xhr.onerror = () => {
+		console.log(xhr.status, xhr.statusText);
+		console.log("error!");
+		console.log(xhr.responseText);
+	};
+	xhr.send(JSON.stringify(changeset));
+		
+}
 //トークンをURLから取得して保存
 function saveToken(){
 	let token;
@@ -152,6 +201,12 @@ function getImageData(marker, key){
 	return foundimage[key];
 }
 
+function getMarker(image_key){
+	
+	
+	return marker;
+}
+
 //シーケンス一覧からマーカーを探し、そのマーカーの指定キーに値を入れる
 function setImageData(marker, key, value){
 
@@ -176,6 +231,7 @@ function collectFixedMarkerIds(){
 	return ids;
 }
 
+//曲がり角指定画像の間の画像を均等間隔に並べる
 var straighten = function (){
 	//
 	const fixed_marker_ids = collectFixedMarkerIds();
@@ -244,6 +300,12 @@ function onMarkerClick(e){
 	selectImage(e.target);
 }
 
+//マーカーを動かしたら、modifiedをtrueに変更
+function onMarkerDragend(e){
+	setImageData(e.target, 'modified', true);
+
+}
+
 function togglefixImage(marker){
 
 	const fixed = getImageData(marker, 'fixed');
@@ -255,11 +317,13 @@ function togglefixImage(marker){
 	}
 }
 
+//曲がり角指定を解除
 function unfixImage(marker){
 	marker.setIcon(L.BeautifyIcon.icon(default_options));
 	setImageData(marker, 'fixed', false);
 }
 
+//曲がり角の写真を指定
 function fixImage(marker){
 
 	marker.setIcon(L.BeautifyIcon.icon(fixed_options));
@@ -274,10 +338,12 @@ function fixImage(marker){
 	setImageData(marker, 'fixed', true);
 	console.log(getImageData(marker, 'fixed'));
 }
-
+//右クリックで曲がり角の指定と解除を繰り返し
 function onMarkerRightclick(e){
 	togglefixImage(e.target);
 }
+
+//mapillaryシーケンスを読み込む
 function loadSequence(){
 
 	const sequence_id = document.getElementById('sequence_id').value;
@@ -298,6 +364,7 @@ function loadSequence(){
 
 			marker.on('click', function (e) {onMarkerClick(e);});
 			marker.on('contextmenu', function (e) {onMarkerRightclick(e);});
+			marker.on('dragend', function(e) {onMarkerDragend(e);});
 			//console.log(i, JSON.stringify(marker));
 			sequence_markers.addLayer(marker).addTo(map);
 			//console.log(i, JSON.stringify(sequence_markers.getLayerId(marker)));
