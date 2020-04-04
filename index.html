@@ -1,0 +1,360 @@
+<html>
+<head>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.3.1/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.3.1/dist/leaflet.js"></script>
+    <script src='https://unpkg.com/mapillary-js@2.20.0/dist/mapillary.min.js'></script>
+    <link href='https://unpkg.com/mapillary-js@2.20.0/dist/mapillary.min.css' rel='stylesheet' />
+	<link rel="stylesheet" href="leaflet-beautify-marker-icon.css" />
+	<script src="leaflet-beautify-marker-icon.js"></script>
+	<link rel="stylesheet" href="css/leaflet.extra-markers.min.css">
+	<script src="js/leaflet.extra-markers.min.js"></script>
+	<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.0.13/css/all.css" integrity="sha384-DNOHZ68U8hZfKXOrtjWvjxusGo9WQnrNx2sqG0tfsghAvtVlRW3tvkXWZh58N9jp" crossorigin="anonymous">
+
+	
+
+<style type="text/css">
+
+#routing {
+	float:left;
+	padding: 10px;
+}
+#mapcontainer {
+	width: 640px;
+	height: 480px;
+
+}
+
+#editor {
+	float:left;
+	padding: 10px
+}
+
+#mly {
+	width: 640px;
+	height: 480px;
+}
+
+#attributions {
+	clear:left;
+
+	background-color: #ddd;
+}
+
+</style>
+</head>
+<body onload="initMap()">
+<h1>[pre-Alpha]Mapillary Sequence Straightener</h1>
+<div id="editor">
+
+
+    <div id='mapcontainer'></div>
+
+	Mapillary sequence ID: <input type="text" class="" id="sequence_id" value="_sm2ugaDA8DGoBQVCOh07g">
+	<input type="button" class="" id="" value="Load" onclick="loadSequence()">
+	</br>
+	<input type="button" class="" id="" value="Straighten" onclick="straighten()">
+	<input type="button" class="" id="" value="Authorize" onclick="authorize()">
+	<input type="button" class="" id="" value="Submit" onclick="submitChangeset()">
+
+</div>
+
+
+<div id='mly'></div>
+
+<div id="attributions">
+<p>Attributions
+<ul>
+<li>Images from <a href="https://www.mapillary.com/">Mapillary</a></li>
+<li>Map: <a href="https://www.openstreetmap.org/copyright">(C)OpenStreetMap contributors</a></li>
+<li>Display map: <a href="https://leafletjs.com/">Leaflet</a></li>
+</ul>
+</div>
+<p>Bug report at <a href="https://github.com/tankaru/">Github</a></p>
+<script src="utils.js"></script>
+<script>
+
+let map;
+let sequence_markers;
+let selected = null;
+let images = [];
+
+const client_id = 'NEh3V0ZjaE1fT1Nkdk9jMnJlSGNQQTo1NzRiNDEwZmM3MzZhNmIw';
+const redirect_uri = 'https://tankaru.github.io/mapillarySequenceStraightener/index.html':
+
+const selected_options = {
+	icon: 'angle-up',
+	iconShape: 'circle',
+	backgroundColor: 'red',
+	iconSize: [35, 35],
+	innerIconStyle: 'transform:rotate(-90deg);font-size: 30px;',
+	iconStyle: 'margin-top: -15px;margin-left: -15px;',
+};
+const default_options = {
+	icon: 'image',
+	iconShape: 'circle',
+	backgroundColor: 'white',
+};
+const fixed_options = {
+	icon: 'flag',
+	iconShape: 'circle',
+	backgroundColor: 'white',
+	iconSize: [35, 35],
+	borderColor: '#555',
+	textColor: '#555',
+	innerIconStyle: 'font-size: 20px;',
+	iconStyle: 'margin-top: -15px;margin-left: -15px;',
+};
+const modified_options = {
+	icon: 'image',
+	iconShape: 'circle',
+	backgroundColor: 'blue',
+};
+
+
+function authorize(){
+	const url = 'https://www.mapillary.com/connect?client_id=' + client_id + '&response_type=token&scope=public:write&redirect_uri=' + redirect_uri;
+
+	let request = new XMLHttpRequest();
+	request.open('GET', url, true);
+	request.onload = function () {
+		const data = this.response;
+		console.log(location.href, JSON.stringify(data));
+		
+	}
+	request.send();
+}
+
+//トークンをURLから取得して保存
+function saveToken(){
+	let token;
+	const url = location.href;
+	const matched = url.match(/access_token=([^&]*)/);
+	if (matched) {
+		token = matched[1];
+		saveString(token);
+		return true;
+	}
+	return false;
+}
+
+function loadToken(){
+	let token;
+	token = localStorage.getItem('token');
+	return token;
+}
+
+//シーケンス一覧からマーカーを探し、そのマーカーの指定キーの値を取り出す
+function getImageData(marker, key){
+	const marker_id = sequence_markers.getLayerId(marker);
+	const foundimage = images.find((image) => {
+			return (image.layer === marker_id);
+		});
+	return foundimage[key];
+}
+
+//シーケンス一覧からマーカーを探し、そのマーカーの指定キーに値を入れる
+function setImageData(marker, key, value){
+
+	const marker_id = sequence_markers.getLayerId(marker);
+	const foundimage = images.find((image) => {
+			return (image.layer === marker_id);
+		});
+
+	foundimage[key] = value;
+	return;
+}
+
+function collectFixedMarkerIds(){
+	let ids = [];
+	for (let i=0; i < images.length; i++){
+		if (images[i]["fixed"]) {
+			ids.push(images[i]["layer"]);
+		}
+		
+	}
+	
+	return ids;
+}
+
+var straighten = function (){
+	//
+	const fixed_marker_ids = collectFixedMarkerIds();
+	for (let i = 0; i < fixed_marker_ids.length-1; i++){
+		//fixed_marker_idsに保存されたレイヤ番号から、画像情報を取得
+		const startimage = images.find((image) => {
+			return (image.layer === fixed_marker_ids[i]);
+		});
+		const endimage = images.find((image) => {
+			return (image.layer === fixed_marker_ids[i+1]);
+		});	
+
+		
+		//間のマーカーの座標を等間隔にそろえる
+		let divide = endimage.number - startimage.number;
+		for (let j = 0; j < divide - 1; j++){
+			const currentimage = images.find((image) => {return (image.number === startimage.number + j  + 1);});	
+
+			const startmarker = sequence_markers.getLayer(startimage.layer).getLatLng();
+			const endmarker = sequence_markers.getLayer(endimage.layer).getLatLng();
+			const lat = startmarker.lat + (endmarker.lat - startmarker.lat)/divide * (j+1) ;
+			const lon = startmarker.lng + (endmarker.lng - startmarker.lng)/divide * (j+1) ;
+			
+			const image = sequence_markers.getLayer(currentimage.layer);
+			image.setIcon(L.BeautifyIcon.icon(modified_options));
+			image.setLatLng([lat, lon]);
+			setImageData(image, 'modified', true);
+			
+		}
+	}
+}
+
+function unselectImage(marker){
+	selected =null;
+	const fixed = getImageData(marker, 'fixed');
+	const modified = getImageData(marker, 'modified');
+
+	if (fixed){
+		marker.setIcon(L.BeautifyIcon.icon(fixed_options));
+	} else if (modified) {
+		marker.setIcon(L.BeautifyIcon.icon(modified_options));
+	} else {
+		marker.setIcon(L.BeautifyIcon.icon(default_options));
+	}
+}
+
+function selectImage(marker){
+
+	if (selected){
+
+		unselectImage(selected);
+	}
+	
+	selected = marker;
+
+	marker.setIcon(L.BeautifyIcon.icon(selected_options));
+	//右の枠に画像を表示
+	const image_key = getImageData(marker, 'image_key');
+	console.log(image_key);
+	mly.moveToKey(image_key);
+}
+
+
+function onMarkerClick(e){
+
+	selectImage(e.target);
+}
+
+function togglefixImage(marker){
+
+	const fixed = getImageData(marker, 'fixed');
+
+	if (fixed) {
+		unfixImage(marker);
+	} else {
+		fixImage(marker);
+	}
+}
+
+function unfixImage(marker){
+	marker.setIcon(L.BeautifyIcon.icon(default_options));
+	setImageData(marker, 'fixed', false);
+}
+
+function fixImage(marker){
+
+	marker.setIcon(L.BeautifyIcon.icon(fixed_options));
+/*	
+	const fixed_marker_id = sequence_markers.getLayerId(marker);
+
+	fixed_marker_ids.push(fixed_marker_id);
+	fixed_marker_ids.sort((a, b) => a - b);
+	//console.log(JSON.stringify(fixed_marker_ids));	
+*/
+
+	setImageData(marker, 'fixed', true);
+	console.log(getImageData(marker, 'fixed'));
+}
+
+function onMarkerRightclick(e){
+	togglefixImage(e.target);
+}
+function loadSequence(){
+
+	const sequence_id = document.getElementById('sequence_id').value;
+	const url = 'https://a.mapillary.com/v3/sequences/' + sequence_id + '?client_id=' + client_id;
+	let request = new XMLHttpRequest();
+	request.open('GET', url, true);
+	request.onload = function () {
+		const data = this.response;
+		const jsondata = JSON.parse(data);
+		const cas = jsondata["properties"]["coordinateProperties"]["cas"];
+		const image_keys = jsondata["properties"]["coordinateProperties"]["image_keys"];
+		const coordinates = jsondata["geometry"]["coordinates"];
+		//console.log(JSON.stringify(coordinates));
+		
+		sequence_markers = L.featureGroup([]).addTo(map);
+		for (let i=0;i<cas.length; i++){
+			let marker = L.marker([coordinates[i][1],coordinates[i][0]], { icon: L.BeautifyIcon.icon(default_options), draggable: true });
+
+			marker.on('click', function (e) {onMarkerClick(e);});
+			marker.on('contextmenu', function (e) {onMarkerRightclick(e);});
+			//console.log(i, JSON.stringify(marker));
+			sequence_markers.addLayer(marker).addTo(map);
+			//console.log(i, JSON.stringify(sequence_markers.getLayerId(marker)));
+			let image = {'number': i, 'ca': cas[i], 'image_key': image_keys[i], 'coordinate': coordinates[i], 'layer': sequence_markers.getLayerId(marker), 'fixed': false, 'modified': false};
+			images.push(image);
+		}
+		map.fitBounds(sequence_markers.getBounds());
+	}
+	request.send();
+}
+
+//http://ktgis.net/service/leafletlearn/index.html
+function initMap() {
+	mly = new Mapillary.Viewer(
+		'mly',
+		// client id
+		client_id,
+		// photo id
+		/*'OI-paD2A_BE4QxKVdyjNAQ'*/null);
+  //地図を表示するdiv要素のidを設定
+  map = L.map('mapcontainer');
+  //地図の中心とズームレベルを指定
+  map.setView([37.9243912, 139.045191], 17);
+  //表示するタイルレイヤのURLとAttributionコントロールの記述を設定して、地図に追加する
+  let osmLayer = L.tileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+	  attribution: "(C)<a href='https://www.openstreetmap.org/copyright' target='_blank'>OpenStreetMap contributors</a>",
+	  maxZoom: 21,
+	  maxNativeZoom: 19,
+	  minZoom: 4,
+	  //maxBounds: [[35.47, 139.62], [35.45, 139.64]],
+  }).addTo(map);
+//  var kokudoLayer = L.tileLayer('https://cyberjapandata.gsi.go.jp/xyz/ort/{z}/{x}/{y}.jpg',{
+//    attribution: '© <a href="https://maps.gsi.go.jp/development/ichiran.html">国土地理院</a>',
+//	});
+	
+	let baseMap = {
+		"OpenStreetMap":osmLayer,
+//		"国土地理院オルソ":kokudoLayer,
+	};
+ 
+	var mapillaryLayer = L.tileLayer('https://raster-tiles.mapillary.com/v0.1/{z}/{x}/{y}.png',{
+		attribution: '(C)<a href="https://www.mapillary.com/">Mapillary</a>, CC BY',
+	  maxZoom: 21,
+	  maxNativeZoom: 17,
+	});
+	mapillaryLayer.setOpacity(0.65);
+	var overlayLayer = {
+		"Mapillary":mapillaryLayer,
+	}
+
+	//レイヤ設定
+	var layerControl = L.control.layers(baseMap,overlayLayer,{"collapsed":true,});
+	layerControl.addTo(map);
+
+}
+
+</script>
+</body>
+</html>
+
