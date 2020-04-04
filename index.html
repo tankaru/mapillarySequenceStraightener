@@ -191,7 +191,7 @@ function saveToken(){
 	if (matched) {
         token = matched[1];
         localStorage.setItem('token', token);
-
+        checkAuthorization();
 		return true;
 	}
 	return false;
