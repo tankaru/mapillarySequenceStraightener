@@ -194,6 +194,7 @@ function submitChangeset(){
 function clearSequence() {
     sequence_markers.clearLayers();
     images = [];
+    document.getElementById("submitresults").innerText = "";
 }
 
 //トークンをURLから取得して保存
@@ -377,8 +378,7 @@ function loadSequence(){
 		//console.log(JSON.stringify(coordinates));
 
         //ロードで初期化
-        sequence_markers = L.featureGroup([]).addTo(map);
-        images = [];
+        clearSequence();
 
 		for (let i=0;i<cas.length; i++){
 			let marker = L.marker([coordinates[i][1],coordinates[i][0]], { icon: L.BeautifyIcon.icon(default_options), draggable: true });
