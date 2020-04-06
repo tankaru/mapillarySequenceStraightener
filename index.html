@@ -219,7 +219,18 @@ function loadToken(){
 	return token;
 }
 
+function getMarker(image_key){
+    const foundimage = images.find((image) => {
+        return (image.image_key === image_key);
+    });
+	console.log("getMarker: ", foundimage);
+	if (typeof foundimage === "undefined") {
+		return false;
+	} else {
+		return sequence_markers.getLayer(foundimage.layer);
+	}
 
+}
 
 function getImageObject(marker) {
     const marker_id = sequence_markers.getLayerId(marker);
@@ -429,6 +440,16 @@ function initMap() {
 		client_id,
 		// photo id
 		/*'OI-paD2A_BE4QxKVdyjNAQ'*/null);
+	
+	//ビューワで画像を移動したら、マップのマーカー選択を移動
+	//妙にかくつく気がする
+	mly.on(Mapillary.Viewer.nodechanged, function(node) {
+		console.log("Mapillary.js node changed:", node.key);
+		const image_key = node.key;
+		const marker = getMarker(image_key);
+		if (marker) selectImage(marker);
+	});
+	
   //地図を表示するdiv要素のidを設定
   map = L.map('mapcontainer');
   //地図の中心とズームレベルを指定
