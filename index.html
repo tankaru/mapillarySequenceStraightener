@@ -331,17 +331,19 @@ function selectImage(marker){
 
 	marker.setIcon(L.BeautifyIcon.icon(selected_options));
 	//右の枠に画像を表示
-    const image_key = getImageData(marker, 'image_key');
-
     console.log("Selected: ", JSON.stringify(getImageObject(marker)), ", Marker: ", JSON.stringify(marker.getLatLng()));
-
-	mly.moveToKey(image_key);
 }
 
 
 function onMarkerClick(e){
+	const marker = e.target;
+	
+	selectImage(marker);
+	
+	const image_key = getImageData(marker, 'image_key');
 
-	selectImage(e.target);
+	mly.moveToKey(image_key);
+
 }
 
 //マーカーを動かしたら、modifiedをtrueに変更
