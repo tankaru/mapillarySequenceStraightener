@@ -380,7 +380,7 @@ function onMarkerRightclick(e){
 function loadSequence(){
     console.log("loadSequence()");
 	const sequence_id = document.getElementById('sequence_id').value;
-	const url = 'https://a.mapillary.com/v3/sequences/' + sequence_id + '?client_id=' + client_id;
+    const url = 'https://a.mapillary.com/v3/sequences/' + sequence_id + '?client_id=' + client_id;
 	let request = new XMLHttpRequest();
 	request.open('GET', url, true);
 	request.onload = function () {
@@ -400,6 +400,15 @@ function loadSequence(){
 			marker.on('click', function (e) {onMarkerClick(e);});
 			marker.on('contextmenu', function (e) {onMarkerRightclick(e);});
 			marker.on('dragend', function(e) {onMarkerDragend(e);});
+			
+			//先頭シーケンスにポップアップ
+			if (i==0){
+				marker.bindTooltip("Start", {permanent: true}).openTooltip();
+			}
+			//最後シーケンスにポップアップ
+			if (i==cas.length-1){
+				marker.bindTooltip("End", {permanent: true}).openTooltip();
+			}			
 			//console.log(i, JSON.stringify(marker));
 			sequence_markers.addLayer(marker).addTo(map);
 			//console.log(i, JSON.stringify(sequence_markers.getLayerId(marker)));
