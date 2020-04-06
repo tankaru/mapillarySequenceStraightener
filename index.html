@@ -172,20 +172,22 @@ function submitChangeset(){
 	const authorization = 'Bearer ' + loadToken();
 	xhr.setRequestHeader("Authorization", authorization);
 	xhr.onload = () => {
-		console.log(xhr.status, xhr.statusText);
+        clearSequence();
+        console.log(xhr.status, xhr.statusText);
 		console.log("success!");
         console.log(xhr.responseText);
         document.getElementById("submitresults").innerText = "Edits and Upload Succeeded!";
         document.getElementById("submit_button").disabled = false;
-        clearSequence();
+
 	};
 	xhr.onerror = () => {
-		console.log(xhr.status, xhr.statusText);
+        clearSequence();
+        console.log(xhr.status, xhr.statusText);
 		console.log("error!");
         console.log(xhr.responseText);
         document.getElementById("submitresults").innerText = "Error! " + JSON.stringify(xhr.responseText);
         document.getElementById("submit_button").disabled = false;
-        clearSequence();
+
     };
 	xhr.send(JSON.stringify(changeset));
 		
@@ -215,6 +217,16 @@ function loadToken(){
 	let token;
 	token = localStorage.getItem('token');
 	return token;
+}
+
+
+
+function getImageObject(marker) {
+    const marker_id = sequence_markers.getLayerId(marker);
+    const foundimage = images.find((image) => {
+        return (image.layer === marker_id);
+    });
+    return foundimage;
 }
 
 //シーケンス一覧からマーカーを探し、そのマーカーの指定キーの値を取り出す
@@ -308,8 +320,10 @@ function selectImage(marker){
 
 	marker.setIcon(L.BeautifyIcon.icon(selected_options));
 	//右の枠に画像を表示
-	const image_key = getImageData(marker, 'image_key');
-	//console.log(image_key);
+    const image_key = getImageData(marker, 'image_key');
+
+    console.log("Selected: ", JSON.stringify(getImageObject(marker)), ", Marker: ", JSON.stringify(marker.getLatLng()));
+
 	mly.moveToKey(image_key);
 }
 
