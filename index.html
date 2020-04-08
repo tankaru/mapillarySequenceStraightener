@@ -164,6 +164,14 @@ function submitChangeset(){
     document.getElementById("submit_button").disabled = true;
 
     const changeset = getChangeset();
+	
+	//投稿ボタンの押し間違いを防ぐため、確認ダイアログを表示
+	const confirm_text = "Submit " + changeset.changes.length + " changes?"
+	const confirmed = window.confirm(confirm_text);
+	if (!confirmed) {
+		document.getElementById("submit_button").disabled = false;
+		return;
+	}
     const url = 'https://a.mapillary.com/v3/changesets?client_id=' + client_id;
            
 	//https://qiita.com/keniooi/items/458732fc8f29cc8e445a
