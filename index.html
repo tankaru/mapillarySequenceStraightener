@@ -175,8 +175,13 @@ function submitChangeset(){
         clearSequence();
         console.log(xhr.status, xhr.statusText);
 		console.log("success!");
-        console.log(xhr.responseText);
-        document.getElementById("submitresults").innerText = "Edits and Upload Succeeded!";
+		console.log(xhr.responseText);
+		if (xhr.status === 200){
+			document.getElementById("submitresults").innerText = "Edits and Upload Succeeded!";
+		} else {
+			document.getElementById("submitresults").innerText = xhr.responseText;
+		}
+        
         document.getElementById("submit_button").disabled = false;
 
 	};
