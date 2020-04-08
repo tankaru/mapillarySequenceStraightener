@@ -53,8 +53,9 @@
         <li>Mapillary sequence ID: <input type="text" class="" id="sequence_id" value="_sm2ugaDA8DGoBQVCOh07g"><input type="button" class="" id="" value="Load" onclick="loadSequence()">
         <li>Edit. Left click to move and show image. Right click to set "Corner" image.
         <li><input type="button" class="" id="" value="Straighten" onclick="straighten()">
-        <li><input type="button" class="" id="submit_button" value="Submit" onclick="submitChangeset()"><span id="submitresults"></span>
+        <li><input type="button" class="" id="submit_button" value="Submit" onclick="submitChangeset()">
     </ol>
+	<pre><span id="submitresults"></span></pre>
 </div>
 
 
@@ -179,7 +180,7 @@ function submitChangeset(){
 		if (xhr.status === 201){
 			document.getElementById("submitresults").innerText = "Edits and Upload Succeeded!";
 		} else {
-			document.getElementById("submitresults").innerText = xhr.responseText;
+			document.getElementById("submitresults").innerText = JSON.stringify(JSON.parse(xhr.responseText), null, 4);
 		}
         
         document.getElementById("submit_button").disabled = false;
