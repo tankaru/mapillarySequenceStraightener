@@ -43,7 +43,7 @@
 </style>
 </head>
 <body onload="initMap()">
-<h1>[DEBUGGING][pre-Alpha]Mapillary Sequence Straightener</h1>
+<h1>[pre-Alpha]Mapillary Sequence Straightener</h1>
 <div id="editor">
 
 
@@ -141,7 +141,7 @@ function getChangeset(){
 			};
 			let changeto = {
 				geometry: geometry,
-				properties: {ca: -1},
+				properties: {},
 				type: "Feature"
 			};
 			let change = {
@@ -164,7 +164,7 @@ function submitChangeset(){
     document.getElementById("submit_button").disabled = true;
 
     const changeset = getChangeset();
-    const url = 'https://a.mapillary.com/v3/changesets?_dry_run&client_id=' + client_id;
+    const url = 'https://a.mapillary.com/v3/changesets?client_id=' + client_id;
            
 	//https://qiita.com/keniooi/items/458732fc8f29cc8e445a
 	let xhr = new XMLHttpRequest();
