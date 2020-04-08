@@ -176,7 +176,7 @@ function submitChangeset(){
         console.log(xhr.status, xhr.statusText);
 		console.log("success!");
 		console.log(xhr.responseText);
-		if (xhr.status === 200){
+		if (xhr.status === 201){
 			document.getElementById("submitresults").innerText = "Edits and Upload Succeeded!";
 		} else {
 			document.getElementById("submitresults").innerText = xhr.responseText;
