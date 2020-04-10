@@ -478,7 +478,11 @@ function initMap() {
 	  minZoom: 1,
 	  //maxBounds: [[35.47, 139.62], [35.45, 139.64]],
   }).addTo(map);
-  const kokudoLayer = L.tileLayer('https://cyberjapandata.gsi.go.jp/xyz/seamlessphoto/{z}/{x}/{y}.jpg',{    attribution: '© <a href="https://maps.gsi.go.jp/development/ichiran.html">国土地理院</a>',
+  const kokudoLayer = L.tileLayer('https://cyberjapandata.gsi.go.jp/xyz/seamlessphoto/{z}/{x}/{y}.jpg',{
+	attribution: '© <a href="https://maps.gsi.go.jp/development/ichiran.html">国土地理院</a>',
+	maxZoom: 21,
+	maxNativeZoom: 18,
+	minZoom: 14,
 	});
 	
 	const baseMap = {
