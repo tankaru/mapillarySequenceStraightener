@@ -471,34 +471,33 @@ function initMap() {
   //地図の中心とズームレベルを指定
   map.setView([0, 0], 1);
   //表示するタイルレイヤのURLとAttributionコントロールの記述を設定して、地図に追加する
-  let osmLayer = L.tileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  const osmLayer = L.tileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 	  attribution: "(C)<a href='https://www.openstreetmap.org/copyright' target='_blank'>OpenStreetMap contributors</a>",
 	  maxZoom: 21,
 	  maxNativeZoom: 19,
 	  minZoom: 1,
 	  //maxBounds: [[35.47, 139.62], [35.45, 139.64]],
   }).addTo(map);
-//  var kokudoLayer = L.tileLayer('https://cyberjapandata.gsi.go.jp/xyz/ort/{z}/{x}/{y}.jpg',{
-//    attribution: '© <a href="https://maps.gsi.go.jp/development/ichiran.html">国土地理院</a>',
-//	});
+  const kokudoLayer = L.tileLayer('https://cyberjapandata.gsi.go.jp/xyz/seamlessphoto/{z}/{x}/{y}.jpg',{    attribution: '© <a href="https://maps.gsi.go.jp/development/ichiran.html">国土地理院</a>',
+	});
 	
-	let baseMap = {
+	const baseMap = {
 		"OpenStreetMap":osmLayer,
-//		"国土地理院オルソ":kokudoLayer,
+		"国土地理院シームレス":kokudoLayer,
 	};
  
-	var mapillaryLayer = L.tileLayer('https://raster-tiles.mapillary.com/v0.1/{z}/{x}/{y}.png',{
+	const mapillaryLayer = L.tileLayer('https://raster-tiles.mapillary.com/v0.1/{z}/{x}/{y}.png',{
 		attribution: '(C)<a href="https://www.mapillary.com/">Mapillary</a>, CC BY',
 	  maxZoom: 21,
 	  maxNativeZoom: 17,
 	});
 	mapillaryLayer.setOpacity(0.65);
-	var overlayLayer = {
+	const overlayLayer = {
 		"Mapillary":mapillaryLayer,
 	}
 
 	//レイヤ設定
-	var layerControl = L.control.layers(baseMap,overlayLayer,{"collapsed":true,});
+	const layerControl = L.control.layers(baseMap,overlayLayer,{"collapsed":true,});
     layerControl.addTo(map);
 
     //マーカーグループを初期化
